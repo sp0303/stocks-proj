@@ -41,10 +41,12 @@ def add_technical_indicators(df):
     # 18-20. Volume
     df['obv'] = OnBalanceVolumeIndicator(close=close_1d, volume=volume_1d).on_balance_volume()
     df['vwap'] = VolumeWeightedAveragePrice(high=high_1d, low=low_1d, close=close_1d, volume=volume_1d, window=14).volume_weighted_average_price()
+    # Volume Change calculation can produce inf if volume was 0
     df['volume_change'] = df['Volume'].pct_change() * 100
     
-    # Fill NaNs from indicators
-    df = df.ffill().bfill()
+    # CRITICAL: Clean up Infinity and remaining NaNs
+    df = df.replace([np.inf, -np.inf], np.nan)
+    df = df.fillna(0) # Final safety net
     
     return df
 
