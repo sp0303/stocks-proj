@@ -4,9 +4,11 @@ import numpy as np
 import yfinance as yf
 from tensorflow.keras.models import load_model
 try:
-    from ai_models.feature_engineer import prepare_multivariate_features
+    from ai_models.feature_engineer import prepare_multivariate_features, add_technical_indicators
 except ImportError:
-    from feature_engineer import prepare_multivariate_features
+    import sys
+    sys.path.append(os.path.dirname(__file__))
+    from feature_engineer import prepare_multivariate_features, add_technical_indicators
 
 LOOKBACK = 60
 BASE_DIR = os.path.dirname(__file__)
@@ -98,8 +100,7 @@ def predict_detailed(symbol):
         # Determine threshold (e.g., 2.0x volatility but min 1.5%)
         dynamic_threshold = max(1.5, volatility * 2.0)
 
-        # Prepare 9-feature matrix and get the enriched dataframe
-        from ai_models.feature_engineer import add_technical_indicators
+        # Prepare 20-feature matrix and get the enriched dataframe
         df_enriched = add_technical_indicators(df)
         features_matrix = prepare_multivariate_features(df)
         

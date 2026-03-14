@@ -16,7 +16,7 @@ except ImportError:
     from feature_engineer import prepare_multivariate_features, add_technical_indicators
 
 LOOKBACK = 60
-FEATURES = 9
+FEATURES = 20
 BASE_DIR = os.path.dirname(__file__)
 TRAIN_DB = os.path.join(BASE_DIR, "training_db")
 
@@ -46,7 +46,7 @@ def get_transformer_and_scaler(symbol):
          raise FileNotFoundError(f"Transformer model not found at {model_path}")
 
     # Initialize Architecture (Must match training params exactly)
-    model = StockTransformer(feature_size=FEATURES, num_heads=3, num_layers=2)
+    model = StockTransformer(feature_size=FEATURES, num_heads=4, num_layers=2)
     model.load_state_dict(torch.load(model_path))
     model.eval() # Set to inference mode (disables dropout etc)
     
@@ -114,7 +114,7 @@ def predict_detailed(symbol):
             pred_val = pred_tensor.item()
             
         # Inverse transform (Close price is index 3)
-        dummy = np.zeros((1, scaled_features.shape[1]))
+        dummy = np.zeros((1, FEATURES))
         dummy[0, 3] = pred_val
         predicted_price = float(scaler.inverse_transform(dummy)[0, 3])
         

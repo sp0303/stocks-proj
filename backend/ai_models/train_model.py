@@ -8,6 +8,8 @@ import os
 try:
     from ai_models.feature_engineer import prepare_multivariate_features
 except ImportError:
+    import sys
+    sys.path.append(os.path.dirname(__file__))
     from feature_engineer import prepare_multivariate_features
 
 BASE_DIR = os.path.dirname(__file__)
@@ -34,7 +36,7 @@ def train(symbol="RELIANCE.NS"):
         print("Error: No data found")
         return
 
-    # Prepare 9-feature matrix
+    # Prepare 20-feature matrix
     data = prepare_multivariate_features(df)
     
     scaler = MinMaxScaler()
@@ -43,7 +45,7 @@ def train(symbol="RELIANCE.NS"):
     X = []
     y = []
 
-    # Features are [Open, High, Low, Close, Volume, rsi, macd, sma20, sma50]
+    # Features are [OHLCV, SMAs, EMAs, RSI, MACD, ROC, Stoch, ATR, BB, OBV, VWAP, VolChange]
     # We predict 'Close' (index 3)
     target_idx = 3
 

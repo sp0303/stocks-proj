@@ -21,7 +21,7 @@ if not os.path.exists(TRAIN_DB):
     os.makedirs(TRAIN_DB)
 
 LOOKBACK = 60
-FEATURES = 9
+FEATURES = 20
 
 def train(symbol="RELIANCE.NS"):
     print(f"[Transformer] Training model for {symbol}...")
@@ -62,7 +62,7 @@ def train(symbol="RELIANCE.NS"):
     # 4. Initialize Model
     model = StockTransformer(
         feature_size=FEATURES,
-        num_heads=3, # 9 features is divisible by 3, so 3 heads works well
+        num_heads=4, # 20 features is divisible by 4
         num_layers=2
     )
 
