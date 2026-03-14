@@ -6,7 +6,9 @@ aiohttp
 feedparser
 vaderSentiment
 tensorflow
-yfinance
+torch
 scikit-learn
-pandas
 numpy
+python-dotenv
+httpx
+joblib
