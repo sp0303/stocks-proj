@@ -7,7 +7,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from nifty50 import NIFTY50
 from ai_models.train_transformer import train
 
-def train_transformer_full_suite():
+import argparse
+
+def train_transformer_full_suite(force=False):
     # Helper to check if model exists
     base_dir = os.path.dirname(os.path.abspath(__file__))
     train_db = os.path.join(base_dir, "training_db")
@@ -17,9 +19,12 @@ def train_transformer_full_suite():
     clean_index = index_symbol.replace("^", "INDEX_")
     index_path = os.path.join(train_db, f"{clean_index}_transformer.pt")
     
-    if not os.path.exists(index_path):
+    if force or not os.path.exists(index_path):
         print("--- STARTING TRANSFORMER INDEX TRAINING (BASELINE) ---")
-        train(index_symbol)
+        try:
+            train(index_symbol)
+        except Exception as e:
+            print(f"Error training Index: {e}")
     else:
         print(f"--- INDEX MODEL {clean_index} ALREADY EXISTS, SKIPPING ---")
     
@@ -29,7 +34,7 @@ def train_transformer_full_suite():
         symbol = f"{stock}.NS"
         model_path = os.path.join(train_db, f"{symbol}_transformer.pt")
         
-        if os.path.exists(model_path):
+        if not force and os.path.exists(model_path):
             print(f"[{stock}] Model already exists, skipping...")
             continue
             
@@ -39,4 +44,8 @@ def train_transformer_full_suite():
             print(f"Error training {stock}: {e}")
 
 if __name__ == "__main__":
-    train_transformer_full_suite()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true", help="Overwrite existing models")
+    args = parser.parse_args()
+    
+    train_transformer_full_suite(force=args.force)

@@ -25,7 +25,7 @@ def add_technical_indicators(df):
     df['sma50'] = SMAIndicator(close=close_1d, window=50).sma_indicator()
     
     # Fill NaNs from indicators (indicators need lead time)
-    df = df.fillna(method='bfill')
+    df = df.ffill().bfill()
     
     return df
 

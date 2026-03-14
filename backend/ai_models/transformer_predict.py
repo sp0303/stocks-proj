@@ -90,7 +90,7 @@ def predict_detailed(symbol):
 
         # Calculate Volatility for Signal Threshold
         # Use daily returns from the last 60 days
-        recent_prices = df['Close'].tail(60).values
+        recent_prices = df['Close'].tail(60).values.flatten()
         daily_returns = np.diff(recent_prices) / recent_prices[:-1]
         volatility = np.std(daily_returns) * 100 # In percentage
         

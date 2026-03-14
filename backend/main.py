@@ -120,6 +120,44 @@ def transformer_prediction_fast(symbol: str):
 def transformer_prediction(symbol: str):
     return transformer_predict_detailed(symbol)
 
+@app.get("/ai/consensus/{symbol}")
+def get_ai_consensus(symbol: str):
+    lstm = lstm_predict(symbol)
+    trans = transformer_predict(symbol)
+    
+    # Error handling
+    if "error" in lstm and "error" in trans:
+        return {"verdict": "UNAVAILABLE", "reason": "Both models failed"}
+    
+    # If one fails, use the other
+    if "error" in lstm: return {"verdict": trans["signal"], "consensus": False, "note": "LSTM failed"}
+    if "error" in trans: return {"verdict": lstm["signal"], "consensus": False, "note": "Transformer failed"}
+
+    # Consensus Logic
+    l_sig = lstm["signal"]
+    t_sig = trans["signal"]
+    
+    if l_sig == t_sig:
+        verdict = l_sig # Agreement
+        consensus = True
+    elif (l_sig == "BUY" and t_sig == "SELL") or (l_sig == "SELL" and t_sig == "BUY"):
+        verdict = "DIVERGENT" # Conflict
+        consensus = False
+    else:
+        # One says HOLD, the other has a direction. 
+        # We'll take the direction but mark it as weak consensus.
+        verdict = l_sig if l_sig != "HOLD" else t_sig
+        consensus = False
+
+    return {
+        "symbol": symbol,
+        "verdict": verdict,
+        "consensus": consensus,
+        "lstm": {"signal": l_sig, "move": lstm["expected_move"]},
+        "transformer": {"signal": t_sig, "move": trans["expected_move"]},
+        "timestamp": os.path.getmtime(os.path.join(os.path.dirname(__file__), "ai_models/training_db")) # Placeholder for freshness
+    }
+
 # PROXIES FOR SOCIAL SERVICE
 @app.get("/social-results/{symbol}")
 async def get_social_results(symbol: str):

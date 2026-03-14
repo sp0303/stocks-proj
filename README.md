@@ -1,340 +1,125 @@
-# Stock AI Dashboard 📈
+# Stock Intelligence Dashboard 📈
 
-A comprehensive stock analysis dashboard providing deep insights into technicals, fundamentals, news impact, and social sentiment.
+A sophisticated AI-driven stock analysis platform that combines **Deep Learning (LSTM)**, **Transformer Networks**, and **Real-Time Sentiment Analysis** to provide professional-grade market insights for the NIFTY 50.
 
-## 🚀 Features
+---
 
-- **Market Movers**: Real-time tracking of top gainers and losers across multiple indices (Nifty 50, Bank, IT, Auto, etc.).
-- **Technical Heatmap**: A sophisticated 0-10 scoring system based on weighted indicators (RSI, MACD, SMAs, Volume, and Returns).
-- **Fundamental Analysis**: Key financial metrics (PE, ROE, D/E) with an overall health score.
-- **Intelligence Insights**: Detailed analysis of volume spikes and multi-period performance.
-- **Social Intelligence**: Sentiment analysis from social media platforms with evidence-based screenshotting.
-- **News Impact**: Real-time news fetching and automated sentiment assessment on stock prices.
-- **Responsive Design**: Fully optimized for Desktop, Tablet, and Mobile devices.
+## 🧠 Core Intelligence Architecture: The "Dual-Brain" System
+
+The platform operates on a redundant AI architecture where every stock is analyzed by two distinct neural networks to ensure signals are robust and validated.
+
+### 1. Multivariate LSTM (TensorFlow)
+*   **Role**: Sequential Trend Analysis.
+*   **Architecture**: Multi-layered Long Short-Term Memory network.
+*   **Focus**: Capturing long-term temporal dependencies and "smooth" price trends.
+*   **Feature Set**: 9-dimensional input vector (OHLCV + RSI + MACD + SMA20 + SMA50).
+
+### 2. PyTorch StockTransformer
+*   **Role**: Pattern Recognition & Volatility Attention.
+*   **Architecture**: Attention-based Transformer with **Learned Positional Encoding**.
+*   **Focus**: Identifying non-linear patterns and "attention spikes" in market data.
+*   **Advanced Logic**: Uses dropout regularization and positional embeddings to understand the 60-day window context.
+
+### 3. The Consensus Engine
+To prevent false positives, the backend implements a **Reconciliation Layer**:
+*   ✅ **High Confidence**: Both models agree on a signal.
+*   ⚠️ **Conflict (Divergent)**: Models disagree (e.g., LSTM says SELL while Transformer says BUY). These are flagged in the UI as High Uncertainty.
+*   **Volatility-Adjusted**: Signal thresholds are not static; they scale dynamically based on the stock's 60-day price standard deviation.
+
+---
 
 ## 📂 Project Structure
 
 ```text
 stocks-proj/
-├── README.md               # Overall project documentation
-├── stylesrules.md          # Design & responsiveness guidelines
-├── backend/                # FastAPI backend engine
-│   ├── main.py             # API entry point & routes
-│   ├── services.py         # Data aggregation & processing
-│   ├── technical_service.py # Indicators & Heatmap scoring
-│   ├── fundamental_service.py # Finance metrics & health
-│   ├── news_service.py     # Live news & sentiment analysis
-│   ├── social_sentiment.py # Social data integration
-│   ├── nifty50.py          # Nifty 50 constituent data
-│   └── requirements.txt    # Backend dependencies
-├── frontend/               # Modern web dashboard
-│   ├── index.html          # Dashboard layout
-│   ├── style.css           # Custom styles & media queries
-│   └── script.js           # Dashboard logic & API calls
-└── social_media/           # Intelligence scrapers
-    ├── scraper.py          # Platform-specific scraping
-    └── service.py          # Scraper orchestration
-```
-
-## 🏗️ Architecture
-
-### Backend (FastAPI)
-- **Modular Services**: Decoupled services for Technicals, Fundamentals, News, and Social Sentiment.
-- **Weighted Scoring Engines**: Custom logic to normalize various indicators into easy-to-understand 0-10 and 0-100 scores.
-- **Data sanitization**: Robust handling of NumPy/Pandas data types for clean JSON API responses.
-
-### Frontend (Vanilla JS/CSS)
-- **Zero Dependencies**: Lightweight and fast, using modern CSS Flexbox/Grid and Vanilla JavaScript.
-- **Premium Aesthetics**: Dark-mode primary theme with glassmorphism components and smooth transitions.
-- **Responsive Layout**: Adheres to guidelines defined in `stylesrules.md`.
-
-### Social Scrapers
-- Python-based scrapers designed to fetch raw content from social platforms for analysis.
-
-## 🛠️ Getting Started
-
-### Backend Setup
-1. Navigate to the `backend` folder.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the API:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-### Frontend Setup
-1. Simply open `frontend/index.html` in your browser or serve it using a local live server.
-
-## 📖 Design Guidelines
-For information on colors, typography, and responsiveness rules, see [stylesrules.md](stylesrules.md).
-
----
-*Built with precision for professional stock analysis.*
-
-
-
-
-2️⃣ Updated Project Structure
-
-I would extend your project like this:
-
-stocks-proj/
-
-backend/
-   main.py
-   services.py
-
-   technical_service.py
-   fundamental_service.py
-   news_service.py
-   social_sentiment.py
-
-   ai_models/
-       lstm_predictor.py
-       transformer_model.py
-       rl_trader.py
-       ensemble.py
-
-frontend/
-   index.html
-   style.css
-   script.js
-3️⃣ Data Flow in Your System
-
-You already collect:
-
-technical indicators
-news sentiment
-social sentiment
-fundamentals
-
-Now feed them into AI models.
-
-technical_service
-news_service
-social_sentiment
-      │
-      ▼
-AI MODELS
-      │
-      ▼
-AI Prediction
-4️⃣ LSTM Model (Price Prediction)
-
-File:
-
-backend/ai_models/lstm_predictor.py
-
-Input:
-
-last 60 days OHLCV
-RSI
-MACD
-SMA
-
-Output:
-
-predicted_price
-expected_move
-signal
-confidence
-
-Example API result:
-
-{
- "model": "lstm",
- "predicted_price": 446,
- "expected_move": 3.7,
- "signal": "BUY",
- "confidence": 71
-}
-5️⃣ Transformer Model (Market Intelligence)
-
-You already have news + tweets + indicators.
-
-This module combines them.
-
-File:
-
-backend/ai_models/transformer_model.py
-
-Input:
-
-news sentiment
-tweets sentiment
-technical indicators
-volume spike
-returns
-
-Output:
-
-market sentiment
-signal
-confidence
-
-Example:
-
-{
- "model": "transformer",
- "news_sentiment": "positive",
- "social_sentiment": "neutral",
- "trend": "bullish",
- "signal": "BUY",
- "confidence": 68
-}
-6️⃣ Reinforcement Learning Trader
-
-File:
-
-backend/ai_models/rl_trader.py
-
-Input:
-
-RSI
-MACD
-price momentum
-volume spike
-news sentiment
-
-Output:
-
-action
-expected_return
-risk_score
-
-Example:
-
-{
- "model": "rl_agent",
- "action": "HOLD",
- "expected_return": 1.2,
- "risk": "medium",
- "confidence": 63
-}
-7️⃣ Ensemble Model (Final Decision)
-
-File:
-
-backend/ai_models/ensemble.py
-
-Combine predictions.
-
-Example logic:
-
-BUY = +1
-SELL = -1
-HOLD = 0
-
-Example:
-
-LSTM = BUY
-Transformer = BUY
-RL = HOLD
-
-Score:
-
-1 + 1 + 0 = 2
-
-Final:
-
-BUY
-Confidence: 74%
-
-## 📂 Current Project Structure (Validated: 2026-03-13 21:16)
-
-```text
-stocks-proj/
-├── README.md               # Documentation & Project Roadmap
-├── stylesrules.md          # UI/UX & Design Guidelines
-├── backend/                # FastAPI AI Engine
-│   ├── main.py             # API Entry (Technicals, AI, Fundamentals)
-│   ├── services.py         # Business logic & Data aggregation
-│   ├── technical_service.py # Indicators & Heatmap Logic
-│   ├── fundamental_service.py # Company Health Analysis
-│   ├── news_service.py     # Live RSS News & VADER Sentiment
-│   ├── social_sentiment.py # Social Media data orchestration
-│   ├── database.py         # SQLite & SQLAlchemy configuration
-│   ├── nifty50.py          # Static Index Data
-│   ├── requirements.txt    # ML & Web dependencies
-│   ├── test_fast_predictor.py # AI Verification Script
-│   ├── ai_models/          # AI Prediction Models
-│   │   ├── train_model.py  # Model Training pipeline (LSTM)
-│   │   ├── fast_predictor.py # Real-time Prediction inference
-│   │   ├── lstm_experiment.py # Experimental AI explorations
-│   │   └── saved_model.h5  # Pre-trained LSTM weights
-│   └── models/             # Database Schemas
-│       └── prediction_store.py # AI Prediction DB model
-├── frontend/               # Dashboard UI (Responsive)
-│   ├── index.html          # Main Dashboard
-│   ├── style.css           # Premium Dark Theme
-│   └── script.js           # Live data rendering
-└── social_media/           # Intelligence data source
-    ├── scraper.py          # Platform Scraping logic
-    └── service.py          # Scraper API bridge
+├── backend/                    # FastAPI AI Engine
+│   ├── main.py                 # API Layer & Routes
+│   ├── services.py             # Indices & Market Data Orchestration
+│   ├── nifty50.py              # Constituent Data
+│   ├── technical_service.py    # Traditional Technical Analysis
+│   ├── fundamental_service.py  # Company Health Metrics
+│   ├── news_service.py         # Live News Sentiment Analysis
+│   ├── ai_models/              # AI Subsystem
+│   │   ├── training_db/        # Local Database for .pt and .h5 models
+│   │   ├── transformer_model.py # PyTorch Transformer Definition
+│   │   ├── train_model.py      # LSTM Training Script
+│   │   ├── train_transformer.py # Transformer Training Script
+│   │   ├── fast_predictor.py   # LSTM Inference Engine
+│   │   ├── transformer_predict.py # Transformer Inference Engine
+│   │   └── feature_engineer.py # Shared Technical Indicator Math
+│   └── requirements.txt        # TF, Torch, YFinance, etc.
+├── frontend/                   # Modern Web Interface
+│   ├── index.html              # Main Dashboard
+│   ├── lstm_index.html         # Detailed AI Analytics Page
+│   ├── style.css               # Glassmorphic Dark-Mode UI
+│   └── script.js               # Frontend Controller
+└── social_media/               # External Intelligence
+    ├── scraper.py              # Social Scraping Logic
+    └── service.py              # Scraper API Bridge
 ```
 
 ---
-*Documentation updated with AI Infrastructure on Mar 13, 2026.*
 
-Example response:
+## 🔄 Logical Flow
 
-{
- "final_signal": "BUY",
- "confidence": 74
-}
-8️⃣ API Endpoint
+1.  **Ingestion**: `yfinance` fetches 7 years of daily historical data.
+2.  **Feature Engineering**: Data is passed through `feature_engineer.py` to calculate RSI, MACD, and SMAs, creating a 9-feature matrix.
+3.  **Scaling**: `MinMaxScaler` normalizes data per-stock to handle different price magnitudes (e.g., RELIANCE vs MRF).
+4.  **Training**: 
+    *   Models look at slices of **60 days** to predict the **61st day's Close price**.
+    *   Training runs for 15-20 epochs with MSE loss.
+5.  **Inference**:
+    *   The API fetches the latest 60 days of data.
+    *   Both models run live predictions.
+    *   Results are reconciled via the **Consensus logic**.
+6.  **Visualization**:
+    *   `script.js` calls `/ai/consensus/` and `/ai/transformer/`.
+    *   Predictions are plotted on **Chart.js** canvases in the frontend.
 
-Add in main.py
+---
 
-/predict/{stock}
+## 🛠️ How to Train Models
 
-Response:
+### Prerequisites
+Ensure you have the backend environment active and all dependencies installed.
 
-{
- "stock": "COALINDIA",
+### Batch Training (Full NIFTY 50)
+The system includes automation scripts to train all 50 stocks + the Index baseline at once.
 
- "lstm": {
-   "signal": "BUY",
-   "confidence": 71
- },
+**1. Train LSTM Models (TensorFlow):**
+```powershell
+# From the backend directory
+python ai_models/train_all.py
+```
 
- "transformer": {
-   "signal": "BUY",
-   "confidence": 68
- },
+**2. Train Transformer Models (PyTorch):**
+```powershell
+# Standard run (resumes where it left off)
+python ai_models/train_transformer_all.py
 
- "rl_agent": {
-   "signal": "HOLD",
-   "confidence": 63
- },
+# Forced re-train (necessary if architecture changes)
+python ai_models/train_transformer_all.py --force
+```
 
- "final_signal": "BUY",
- "confidence": 74
-}
-9️⃣ Frontend UI
+### Individual Training
+```powershell
+python ai_models/train_transformer.py --symbol RELIANCE.NS
+```
 
-Add new section:
+---
 
-AI PREDICTIONS
+## 🚀 Deployment & Running
 
-Example:
+1. **Start Backend**:
+   ```bash
+   uvicorn main:app --port 8000 --reload
+   ```
+2. **Start Social Service** (Optional):
+   ```bash
+   python service.py
+   ```
+3. **Open Frontend**:
+   Serve the `frontend/` directory or open `index.html` directly.
 
-AI PREDICTION ENGINE
-
-LSTM MODEL
-Signal: BUY
-Confidence: 71%
-
-TRANSFORMER MODEL
-Signal: BUY
-Confidence: 68%
-
-RL TRADING AGENT
-Action: HOLD
-Confidence: 63%
-
-FINAL AI SIGNAL
-BUY
-Confidence: 74%# stocks-proj
+---
+*Powered by DeepMind-inspired architectures for the Indian Stock Market.*

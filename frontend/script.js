@@ -255,9 +255,9 @@ async function fetchMoversAISignals(stocks) {
         }
 
         try {
-            const res = await fetch(`${API}/ai/lstm/${encodeURIComponent(symbol)}`);
+            const res = await fetch(`${API}/ai/consensus/${encodeURIComponent(symbol)}`);
             const data = await res.json();
-            if (data.signal) {
+            if (data.verdict) {
                 aiCache[symbol] = data;
                 updateAIBadge(container, data);
             }
@@ -270,12 +270,23 @@ async function fetchMoversAISignals(stocks) {
 function updateAIBadge(container, data) {
     let color = "#94a3b8";
     let bg = "rgba(148, 163, 184, 0.1)";
+    let label = data.verdict || "HOLD";
     
-    if (data.signal === "BUY") { color = "#22c55e"; bg = "rgba(34, 197, 94, 0.1)"; }
-    else if (data.signal === "SELL") { color = "#ef4444"; bg = "rgba(239, 68, 68, 0.1)"; }
+    if (label === "BUY") { 
+        color = "#22c55e"; 
+        bg = "rgba(34, 197, 94, 0.1)"; 
+    } else if (label === "SELL") { 
+        color = "#ef4444"; 
+        bg = "rgba(239, 68, 68, 0.1)"; 
+    } else if (label === "DIVERGENT") {
+        color = "#f59e0b"; // Warning Orange
+        bg = "rgba(245, 158, 11, 0.1)";
+        label = "⚠️ CONFLICT";
+    }
 
-    container.innerHTML = `<span class="badge" style="background: ${bg}; color: ${color}; border: 1px solid ${color}55; font-weight: bold; min-width: 65px; display: inline-block;">${data.signal}</span>`;
+    container.innerHTML = `<span class="badge" style="background: ${bg}; color: ${color}; border: 1px solid ${color}55; font-weight: bold; min-width: 65px; display: inline-block; font-size: 0.75rem;">${label}</span>`;
 }
+
 
 function renderSocialCell(symbol) {
     const cached = sentimentCache[symbol];
@@ -592,13 +603,40 @@ function nextPage() {
 
 async function loadAI(symbol, volSpike = 1.0) {
     try {
-        const [resLstm, resTrans] = await Promise.all([
+        const [resLstm, resTrans, resCons] = await Promise.all([
             fetch(API + "/ai/lstm/" + symbol),
-            fetch(API + "/ai/transformer/" + symbol).catch(() => null)
+            fetch(API + "/ai/transformer/" + symbol).catch(() => null),
+            fetch(API + "/ai/consensus/" + symbol).catch(() => null)
         ]);
         
         const data = await resLstm.json();
         const dataTrans = resTrans && resTrans.ok ? await resTrans.json() : null;
+        const dataCons = resCons && resCons.ok ? await resCons.json() : null;
+
+        // Consensus UI
+        if (dataCons) {
+            const vEl = document.getElementById("aiConsensusVerdict");
+            const nEl = document.getElementById("aiConsensusNote");
+            const section = document.getElementById("ai-consensus-section");
+            
+            vEl.innerText = dataCons.verdict;
+            if (dataCons.consensus) {
+                vEl.style.background = (dataCons.verdict === "BUY") ? "rgba(34, 197, 94, 0.2)" : (dataCons.verdict === "SELL" ? "rgba(239, 68, 68, 0.2)" : "rgba(148, 163, 184, 0.2)");
+                vEl.style.color = (dataCons.verdict === "BUY") ? "#22c55e" : (dataCons.verdict === "SELL" ? "#ef4444" : "#94a3b8");
+                nEl.innerHTML = `✅ <b>High Confidence:</b> Both models agree on a <b>${dataCons.verdict}</b> signal.`;
+                section.style.borderLeftColor = "#22c55e";
+            } else if (dataCons.verdict === "DIVERGENT") {
+                vEl.style.background = "rgba(245, 158, 11, 0.2)";
+                vEl.style.color = "#f59e0b";
+                nEl.innerHTML = `⚠️ <b>Warning:</b> Models disagree (LSTM: ${dataCons.lstm.signal}, Trans: ${dataCons.transformer.signal}). Proceed with caution.`;
+                section.style.borderLeftColor = "#f59e0b";
+            } else {
+                vEl.style.background = "rgba(96, 165, 250, 0.2)";
+                vEl.style.color = "#60a5fa";
+                nEl.innerHTML = `ℹ️ <b>Weak Consensus:</b> One model is neutral, taking lead from ${dataCons.verdict} signal.`;
+                section.style.borderLeftColor = "#60a5fa";
+            }
+        }
 
         // LSTM Grid
         document.getElementById("aiCurrent").innerText = data.current_price.toFixed(2);
