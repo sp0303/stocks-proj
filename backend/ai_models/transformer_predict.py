@@ -77,8 +77,8 @@ def predict_detailed(symbol):
         symbol = symbol + ".NS"
     
     try:
-        # Fetch data
-        df = yf.download(symbol, period="6mo")
+        # 1. Fetch data
+        df = yf.download(symbol, period="7y") # Use full period for volatility calc
         if df.empty:
             return {"error": "No price data available", "signal": "UNKNOWN"}
 
@@ -87,6 +87,15 @@ def predict_detailed(symbol):
         
         if len(features_matrix) < LOOKBACK:
             return {"error": "Insufficient historical data", "signal": "UNKNOWN"}
+
+        # Calculate Volatility for Signal Threshold
+        # Use daily returns from the last 60 days
+        recent_prices = df['Close'].tail(60).values
+        daily_returns = np.diff(recent_prices) / recent_prices[:-1]
+        volatility = np.std(daily_returns) * 100 # In percentage
+        
+        # Determine threshold (e.g., 2.0x volatility but min 1.5%)
+        dynamic_threshold = max(1.5, volatility * 2.0)
 
         # Load specific model & scaler
         model, scaler = get_transformer_and_scaler(symbol)
@@ -129,9 +138,9 @@ def predict_detailed(symbol):
         current_price = history[-1]["price"]
         change = float(((predicted_price - current_price) / current_price) * 100)
 
-        if change > 1.5:
+        if change > dynamic_threshold:
             signal = "BUY"
-        elif change < -1.5:
+        elif change < -dynamic_threshold:
             signal = "SELL"
         else:
             signal = "HOLD"
@@ -142,9 +151,12 @@ def predict_detailed(symbol):
             "current_price": float(current_price),
             "predicted_price": float(predicted_price),
             "expected_move": float(change),
+            "threshold_used": float(dynamic_threshold),
+            "volatility": float(volatility),
             "signal": signal,
             "history": history
         }
+
     except Exception as e:
         return {
             "model": "PyTorch Transformer",
