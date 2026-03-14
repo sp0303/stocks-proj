@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+yfinance
+pandas
+aiohttp
+feedparser
+vaderSentiment
+tensorflow
+yfinance
+scikit-learn
+pandas
+numpy

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Stock AI Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+</head>
+
+<body>
+
+        <div class="header-main">
+            <h1>📈 Stock AI Dashboard</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
+
+        <!-- INDEX CARD -->
+
+        <div class="card index-card">
+
+            <div class="index-header">
+
+                <div>
+
+                    <h2>Nifty 50</h2>
+                    <div class="price-row">
+
+                        <span id="nifty-price">--</span>
+                        <span id="nifty-change">--</span>
+
+                    </div>
+
+                </div>
+                <a href="lstm_index.html" class="tab active" style="text-decoration: none; padding: 10px 20px;">Detailed AI View →</a>
+            </div>
+            
+            <div style="height: 150px; margin-top: 10px;">
+                <canvas id="niftyMainChart"></canvas>
+            </div>
+        </div>
+
+
+        <!-- MARKET MOVERS -->
+
+        <div class="card movers-card">
+
+            <div class="movers-header">
+
+                <div class="header-left">
+                    <h2>Market Movers</h2>
+                    <select id="index-select" onchange="loadMovers()">
+                        <option value="NIFTY 50">Nifty 50</option>
+                        <option value="NIFTY BANK">Nifty Bank</option>
+                        <option value="NIFTY IT">Nifty IT</option>
+                        <option value="NIFTY AUTO">Nifty Auto</option>
+                        <option value="NIFTY FINANCIAL SERVICES">Nifty Fin Service</option>
+                    </select>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="changeMoversType('gainers')">Top Gainers</button>
+                    <button class="tab" onclick="changeMoversType('losers')">Top Losers</button>
+                </div>
+
+            </div>
+
+            <div class="table-container">
+                <table class="movers-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Company</th>
+                            <th>Price</th>
+                            <th>Change</th>
+                            <th>% Change</th>
+                            <th>Volume</th>
+                            <th>News Impact</th>
+                            <th>Fundamental Score</th>
+                            <th>Technical Action</th>
+                            <th>AI View</th>
+                            <th>Social Sentiment</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="movers-body">
+
+                    </tbody>
+
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button onclick="prevPage()">Previous</button>
+                <span id="page-info">Page 1</span>
+                <button onclick="nextPage()">Next</button>
+            </div>
+
+        </div>
+
+
+
+    </div>
+
+    <!-- News Detail Modal -->
+    <div id="news-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Latest News</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="news-list" class="news-list">
+                    <!-- News items will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fundamentals Detail Modal -->
+    <div id="fund-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="fund-modal-title">Fundamental Analysis</h2>
+                <button id="close-fund-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="fund-details" class="fund-details">
+                    <table class="fund-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                                <th>Explanation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fund-body">
+                            <!-- Fundamental data will be populated here -->
+                        </tbody>
+                    </table>
+                    <div class="fund-summary">
+                        <strong>Overall Score:</strong> <span id="fund-score-val"></span> / 10
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Detail Modal -->
+    <div id="tech-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tech-modal-title">Technical Analysis</h2>
+                <button id="close-tech-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="tech-details" class="tech-details">
+                    <table class="fund-table">
+                        <thead>
+                            <tr>
+                                <th>Indicator</th>
+                                <th>Value</th>
+                                <th>Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tech-body">
+                            <!-- Technical data will be populated here -->
+                        </tbody>
+                    </table>
+                    <div class="fund-summary">
+                        <strong>Action:</strong> <span id="tech-action-val"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tweet Detail Modal (Existing Styles) -->
+    <div id="tweet-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2><span id="tweet-symbol">STK</span> Social Intelligence</h2>
+                <button class="close-btn" id="close-tweet-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="sentiment-summary"
+                    style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
+                    <div class="sentiment-score-box"
+                        style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; flex: 1;">
+                        <div style="color: #94a3b8; font-size: 0.9rem;">Avg Sentiment</div>
+                        <div id="tweet-avg-score" style="font-size: 2rem; font-weight: bold;">0.000</div>
+                    </div>
+                    <div class="sentiment-score-box"
+                        style="text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; flex: 1;">
+                        <div style="color: #94a3b8; font-size: 0.9rem;">Tweets Analyzed</div>
+                        <div id="tweet-count" style="font-size: 2rem; font-weight: bold;">0</div>
+                    </div>
+                </div>
+
+                <!-- TREND SUMMARY -->
+                <div id="sentiment-trend-info"
+                    style="margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <!-- Populated by script.js -->
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #60a5fa; margin-bottom: 15px;">Conversation Analysis</h3>
+                    <div id="tweet-list" class="news-list">
+                        <!-- Tweets will be populated here as tweet-cards -->
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="color: #60a5fa; margin-bottom: 15px;">Twitter Evidence</h3>
+                    <div id="tweet-screenshot-container"
+                        style="width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <img id="tweet-screenshot" src="" style="width: 100%; display: block;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSIGHTS MODAL -->
+    <div id="insights-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="insights-modal-title">Stock Insights</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- AI BRIEFING SUMMARY -->
+                <div id="ai-briefing" class="insight-summary">
+                    AI is analyzing market signals...
+                </div>
+
+                <!-- Volume Analysis Section -->
+                <div class="insight-section">
+                    <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1rem;">Volume Analysis</h3>
+                    <div class="insight-grid">
+                        <div class="insight-group">
+                            <span class="label">Today's Volume</span>
+                            <span id="insight-today-vol">0</span>
+                        </div>
+                        <div class="insight-group">
+                            <span class="label">20d Avg Volume</span>
+                            <span id="insight-avg-vol">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Prediction Section LSTM-->
+                <div class="insight-section">
+                    <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1rem;">AI Prediction (LSTM)</h3>
+
+                    <div class="insight-grid">
+                        <div class="insight-group">
+                            <span class="label">Current Price</span>
+                            <span id="aiCurrent">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Predicted Price</span>
+                            <span id="aiPredicted">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Expected Move</span>
+                            <span id="aiMove">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">AI Signal</span>
+                            <span id="aiSignal">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Prediction Section Transformer-->
+                <div class="insight-section">
+                    <h3 style="color: #a855f7; margin-bottom: 15px; font-size: 1rem;">AI Prediction (Transformer)</h3>
+
+                    <div class="insight-grid">
+                        <div class="insight-group">
+                            <span class="label">Current Price</span>
+                            <span id="aiCurrentTransformer">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Predicted Price</span>
+                            <span id="aiPredictedTransformer">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Expected Move</span>
+                            <span id="aiMoveTransformer">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">AI Signal</span>
+                            <span id="aiSignalTransformer">-</span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Technical Indicators Section -->
+                <div class="insight-section">
+                    <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1rem;">Technical Indicators</h3>
+                    <div class="insight-grid">
+                        <div class="insight-group">
+                            <span class="label">RSI (14)</span>
+                            <span id="aiRSI">-</span>
+                        </div>
+                        <div class="insight-group">
+                            <span class="label">MACD</span>
+                            <span id="aiMACD">-</span>
+                        </div>
+                        <div class="insight-group">
+                            <span class="label">SMA 20</span>
+                            <span id="aiSMA20">-</span>
+                        </div>
+                        <div class="insight-group">
+                            <span class="label">SMA 50</span>
+                            <span id="aiSMA50">-</span>
+                        </div>
+                    </div>
+                </div>
+                    
+                    <!-- Integrated LSTM Chart -->
+                    <div class="insight-card" style="margin-top: 20px; height: 250px;">
+                        <canvas id="modalLstmChart"></canvas>
+                    </div>
+                    
+                    <div style="margin-top: 25px; text-align: center;">
+                        <a id="view-detailed-ai" href="#" class="tab active" style="text-decoration: none; padding: 12px 24px; display: inline-block; width: 100%; box-sizing: border-box;">View Full Detailed Analysis →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scraper Warning Alert -->
+    <div id="scraper-alert" class="alert-toast" style="display: none;">
+        Wait, one process is already running...
+    </div>
+
+    <script src="script.js" defer></script>
+
+</body>
+
+</html>
