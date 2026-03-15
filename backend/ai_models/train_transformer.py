@@ -30,14 +30,18 @@ def train(symbol="RELIANCE.NS"):
     model_path = os.path.join(TRAIN_DB, f"{clean_symbol}_transformer.pt")
     scaler_path = os.path.join(TRAIN_DB, f"{clean_symbol}_scaler.save") # Share scaler format or overwrite
 
-    # 1. Fetch Data
-    df = yf.download(symbol, period="7y")
+    # Fetch from 2019-01-01 baseline
+    df = yf.download(symbol, start="2019-01-01")
     if df.empty:
         print("Error: No data found")
         return
 
-    # 2. Extract 9-features
+    # 2. Extract features
     data = prepare_multivariate_features(df)
+    
+    if len(data) < LOOKBACK + 50:
+        print(f"Skipping {symbol}: Insufficient data points ({len(data)})")
+        return
     
     # 3. Scale Data
     scaler = MinMaxScaler()

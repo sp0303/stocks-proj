@@ -77,8 +77,8 @@ def predict_detailed(symbol):
         symbol = symbol + ".NS"
     
     try:
-        # 1. Fetch data
-        df = yf.download(symbol, period="7y") # Use full period for volatility calc
+        # 1. Fetch from 2019-01-01 baseline
+        df = yf.download(symbol, start="2019-01-01")
         if df.empty:
             return {"error": "No price data available", "signal": "UNKNOWN"}
 

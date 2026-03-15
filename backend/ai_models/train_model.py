@@ -24,13 +24,13 @@ LOOKBACK = 60
 def train(symbol="RELIANCE.NS"):
     # Fix symbol naming for filesystem
     clean_symbol = symbol.replace("^", "INDEX_")
-    model_path = os.path.join(TRAIN_DB, f"{clean_symbol}_model.h5")
+    model_path = os.path.join(TRAIN_DB, f"{clean_symbol}_model.keras")
     scaler_path = os.path.join(TRAIN_DB, f"{clean_symbol}_scaler.save")
 
     print(f"Training multivariate model for {symbol}...")
     
-    # Fetch 7 years for deep training data
-    df = yf.download(symbol, period="7y")
+    # Fetch from 2019-01-01 baseline
+    df = yf.download(symbol, start="2019-01-01")
     
     if df.empty:
         print("Error: No data found")
@@ -38,6 +38,10 @@ def train(symbol="RELIANCE.NS"):
 
     # Prepare 20-feature matrix
     data = prepare_multivariate_features(df)
+    
+    if len(data) < LOOKBACK + 50:
+        print(f"Skipping {symbol}: Insufficient data points ({len(data)})")
+        return
     
     scaler = MinMaxScaler()
     scaled = scaler.fit_transform(data)

@@ -9,7 +9,8 @@ def add_technical_indicators(df):
     """
     Adds 20 technical indicators to the dataframe.
     """
-    df = df.copy()
+    # Source Cleaning: Drop rows where core data is missing (Holidays/Weekends)
+    df = df.dropna(subset=['Open', 'High', 'Low', 'Close'])
     
     # Ensure Close is 1D Series
     close_1d = df['Close'].squeeze()

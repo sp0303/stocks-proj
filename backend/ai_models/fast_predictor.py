@@ -27,15 +27,14 @@ def get_model_and_scaler(symbol):
     if clean_symbol in _model_cache:
         return _model_cache[clean_symbol]["model"], _model_cache[clean_symbol]["scaler"]
 
-    model_path = os.path.join(TRAIN_DB, f"{clean_symbol}_model.h5")
+    model_path = os.path.join(TRAIN_DB, f"{clean_symbol}_model.keras")
     scaler_path = os.path.join(TRAIN_DB, f"{clean_symbol}_scaler.save")
 
     # Fallback to Index model if specific stock model doesn't exist
     if not os.path.exists(model_path):
         print(f"Specific model for {symbol} not found. Falling back to Index model.")
-        symbol = "^NSEI"
         clean_symbol = "INDEX_NSEI"
-        model_path = os.path.join(TRAIN_DB, "INDEX_NSEI_model.h5")
+        model_path = os.path.join(TRAIN_DB, "INDEX_NSEI_model.keras")
         scaler_path = os.path.join(TRAIN_DB, "INDEX_NSEI_scaler.save")
         
         if clean_symbol in _model_cache:
@@ -81,8 +80,8 @@ def predict_detailed(symbol):
         symbol = symbol + ".NS"
     
     try:
-        # Fetch 7 years for consistent volatility baseline
-        df = yf.download(symbol, period="7y")
+        # Fetch from 2019-01-01 baseline
+        df = yf.download(symbol, start="2019-01-01")
 
         if df.empty:
             return {
