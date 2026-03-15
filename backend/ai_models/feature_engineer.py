@@ -51,9 +51,9 @@ def add_technical_indicators(df):
     # Volume Change calculation can produce inf if volume was 0
     df['volume_change'] = df['Volume'].pct_change() * 100
     
-    # CRITICAL: Clean up Infinity and remaining NaNs
+    # CRITICAL: Clean up Infinity and drop rows with NaNs from indicators (warm-up periods)
     df = df.replace([np.inf, -np.inf], np.nan)
-    df = df.fillna(0) # Final safety net
+    df = df.dropna() # Drop rows where indicators (like EMA200) haven't warmed up yet
     
     return df
 

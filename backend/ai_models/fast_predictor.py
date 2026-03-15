@@ -2,7 +2,7 @@ import os
 import joblib
 import numpy as np
 import yfinance as yf
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 try:
     from ai_models.feature_engineer import prepare_multivariate_features, add_technical_indicators
 except ImportError:

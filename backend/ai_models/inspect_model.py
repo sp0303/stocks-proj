@@ -1,29 +1,29 @@
 import os
 import glob
 from datetime import datetime
-from tensorflow.keras.models import load_model
+from keras.models import load_model
 
 BASE_DIR = os.path.dirname(__file__)
 TRAIN_DB = os.path.join(BASE_DIR, "training_db")
 
 print("Scanning training_db...")
 
-# Get all .h5 files
-h5_files = glob.glob(os.path.join(TRAIN_DB, "*.h5"))
+# Get all .keras files
+keras_files = glob.glob(os.path.join(TRAIN_DB, "*.keras"))
 
 # Sort by modification time, newest first
-h5_files.sort(key=os.path.getmtime, reverse=True)
+keras_files.sort(key=os.path.getmtime, reverse=True)
 
 with open(os.path.join(BASE_DIR, "db_summary.txt"), "w", encoding="utf-8") as f:
     f.write("===== TRAINING DB CONTENTS =====\n")
-    if not h5_files:
+    if not keras_files:
         f.write("No models found in training_db.\n")
     else:
-        f.write(f"Total Models Found: {len(h5_files)}\n\n")
+        f.write(f"Total Models Found: {len(keras_files)}\n\n")
         f.write(f"{'File Name':<30} | {'Last Modified':<20} | {'Size (KB)':<10}\n")
         f.write("-" * 65 + "\n")
         
-        for file_path in h5_files:
+        for file_path in keras_files:
             file_name = os.path.basename(file_path)
             mtime = os.path.getmtime(file_path)
             recent_time = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
@@ -31,7 +31,7 @@ with open(os.path.join(BASE_DIR, "db_summary.txt"), "w", encoding="utf-8") as f:
             f.write(f"{file_name:<30} | {recent_time:<20} | {size_kb:.1f} KB\n")
             
         # Get details for the most recently updated model
-        most_recent_model_path = h5_files[0]
+        most_recent_model_path = keras_files[0]
         most_recent_name = os.path.basename(most_recent_model_path)
         
         f.write(f"\n\n===== DETAILS FOR MOST RECENT MODEL: {most_recent_name} =====\n\n")
