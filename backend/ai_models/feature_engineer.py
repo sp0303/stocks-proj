@@ -9,6 +9,12 @@ def add_technical_indicators(df):
     """
     Adds 20 technical indicators to the dataframe.
     """
+    # 0. Handle MultiIndex columns (yfinance v0.2.40+)
+    if isinstance(df.columns, pd.MultiIndex):
+        # Flatten MultiIndex: if columns are (Price, Ticker), take Price
+        # This handles cases where yfinance returns [('Close', 'RELIANCE.NS'), ...]
+        df.columns = df.columns.get_level_values(0)
+
     # Source Cleaning: Drop rows where core data is missing (Holidays/Weekends)
     df = df.dropna(subset=['Open', 'High', 'Low', 'Close'])
     
