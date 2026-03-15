@@ -69,10 +69,7 @@ def predict(symbol):
         "predicted_price": res["predicted_price"],
         "expected_move": res["expected_move"],
         "signal": res["signal"],
-        "rsi": res["history"][-1].get("rsi"),
-        "macd": res["history"][-1].get("macd"),
-        "sma20": res["history"][-1].get("sma20"),
-        "sma50": res["history"][-1].get("sma50")
+        "features": res.get("latest_features", {})
     }
 
 def predict_detailed(symbol):
@@ -129,24 +126,29 @@ def predict_detailed(symbol):
         dummy[0, 3] = pred[0][0]
         predicted_price = float(scaler.inverse_transform(dummy)[0, 3])
         
-        # Get history for display (Full Multivariate Set)
+        # Get history for display (Full Multivariate Set - 20 Features)
         history_df = df_enriched.tail(60)
         history = []
-        for date, row in history_df.iterrows():
-            history.append({
-                "date": date.strftime("%Y-%m-%d"),
-                "price": float(row["Close"].item()),
-                "open": float(row["Open"].item()),
-                "high": float(row["High"].item()),
-                "low": float(row["Low"].item()),
-                "volume": float(row["Volume"].item()),
-                "rsi": float(row["rsi"].item()) if "rsi" in row else None,
-                "macd": float(row["macd"].item()) if "macd" in row else None,
-                "sma20": float(row["sma20"].item()) if "sma20" in row else None,
-                "sma50": float(row["sma50"].item()) if "sma50" in row else None
-            })
+        
+        # Define all 20 features we want to expose
+        feature_cols = [
+            'Open', 'High', 'Low', 'Close', 'Volume',
+            'sma20', 'sma50', 'ema20', 'ema50', 'ema200',
+            'rsi', 'macd', 'roc', 'stoch_k',
+            'atr', 'bb_upper', 'bb_lower',
+            'obv', 'vwap', 'volume_change'
+        ]
 
-        current_price = history[-1]["price"]
+        for date, row in history_df.iterrows():
+            item = {"date": date.strftime("%Y-%m-%d")}
+            for col in feature_cols:
+                if col in row:
+                    val = row[col]
+                    # Handle both Series and scalar (item() works for both usually in newer pandas)
+                    item[col.lower()] = float(val.item()) if hasattr(val, 'item') else float(val)
+            history.append(item)
+
+        current_price = history[-1]["close"]
         change = float(((predicted_price - current_price) / current_price) * 100)
 
         if change > dynamic_threshold:
@@ -165,6 +167,7 @@ def predict_detailed(symbol):
             "threshold_used": float(dynamic_threshold),
             "volatility": float(volatility),
             "signal": signal,
+            "latest_features": history[-1] if history else {},
             "history": history
         }
 

@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 def get_technical(symbol):
     try:
-        ticker = yf.Ticker(symbol + ".NS")
+        yf_symbol = symbol if symbol.endswith(".NS") or "^" in symbol else symbol + ".NS"
+        ticker = yf.Ticker(yf_symbol)
         df = ticker.history(period="3mo")
 
         if df.empty:
@@ -71,7 +72,8 @@ def get_technical(symbol):
 
 def get_technical(symbol):
     try:
-        ticker = yf.Ticker(symbol + ".NS")
+        yf_symbol = symbol if symbol.endswith(".NS") or "^" in symbol else symbol + ".NS"
+        ticker = yf.Ticker(yf_symbol)
         # Fetch 6 months of history for 3-month returns and SMA50
         df = ticker.history(period="6mo")
 

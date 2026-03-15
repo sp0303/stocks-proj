@@ -13,9 +13,11 @@ from technical_service import get_technical, get_technical_batch
 from social_sentiment import get_social_sentiment
 from ai_models.fast_predictor import predict as lstm_predict, predict_detailed as lstm_predict_detailed
 from ai_models.transformer_predict import predict as transformer_predict, predict_detailed as transformer_predict_detailed
+from intelligence_service import get_stock_intelligence, get_index_intelligence
 
 from fastapi.responses import FileResponse, JSONResponse
 import httpx
+import aiohttp
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
@@ -157,6 +159,17 @@ def get_ai_consensus(symbol: str):
         "transformer": {"signal": t_sig, "move": trans["expected_move"]},
         "timestamp": os.path.getmtime(os.path.join(os.path.dirname(__file__), "ai_models/training_db")) # Placeholder for freshness
     }
+
+@app.get("/ai/intelligence/stock/{symbol}")
+async def stock_intelligence(symbol: str):
+    """Get full intelligence (News, Funda, Tech, AI) for one stock."""
+    async with aiohttp.ClientSession() as session:
+        return await get_stock_intelligence(symbol, session)
+
+@app.get("/ai/intelligence/index/nifty50")
+async def index_intelligence():
+    """Get full intelligence for entire NIFTY 50."""
+    return await get_index_intelligence()
 
 # PROXIES FOR SOCIAL SERVICE
 @app.get("/social-results/{symbol}")

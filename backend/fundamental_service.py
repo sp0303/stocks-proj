@@ -4,7 +4,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 def get_fundamentals(symbol):
     try:
-        ticker = yf.Ticker(symbol + ".NS")
+        # Prevent double suffix like RELIANCE.NS.NS
+        yf_symbol = symbol if symbol.endswith(".NS") or "^" in symbol else symbol + ".NS"
+        ticker = yf.Ticker(yf_symbol)
         info = ticker.info
 
         fundamentals = {
