@@ -69,7 +69,11 @@ def predict(symbol):
         "predicted_price": res["predicted_price"],
         "expected_move": res["expected_move"],
         "signal": res["signal"],
-        "features": res.get("latest_features", {})
+        "rsi": res.get("rsi"),
+        "macd": res.get("macd"),
+        "sma20": res.get("sma20"),
+        "sma50": res.get("sma50"),
+        "features": res.get("features", {})
     }
 
 def predict_detailed(symbol):
@@ -110,7 +114,13 @@ def predict_detailed(symbol):
 
         model, scaler = get_model_and_scaler(symbol)
         
-        # Scale the full feature set
+        # Adaptive Slicing: Determine if this model expects 9 or 20 features
+        expected_features = getattr(scaler, "n_features_in_", 20)
+        if features_matrix.shape[1] > expected_features:
+            print(f"[LSTM] Slicing features from {features_matrix.shape[1]} to {expected_features} for model alignment.")
+            features_matrix = features_matrix[:, :expected_features]
+        
+        # Scale the feature set
         scaled_features = scaler.transform(features_matrix)
         
         # Get the last LOOKBACK days
@@ -122,7 +132,7 @@ def predict_detailed(symbol):
         
         # Scaling back is tricky with multivariate. 
         # We need a dummy matrix to inverse transform only the 'Close' price (index 3).
-        dummy = np.zeros((1, scaled_features.shape[1]))
+        dummy = np.zeros((1, expected_features))
         dummy[0, 3] = pred[0][0]
         predicted_price = float(scaler.inverse_transform(dummy)[0, 3])
         
@@ -142,13 +152,19 @@ def predict_detailed(symbol):
         for date, row in history_df.iterrows():
             item = {"date": date.strftime("%Y-%m-%d")}
             for col in feature_cols:
+                col_lower = col.lower()
                 if col in row:
                     val = row[col]
-                    # Handle both Series and scalar (item() works for both usually in newer pandas)
-                    item[col.lower()] = float(val.item()) if hasattr(val, 'item') else float(val)
+                    val_float = float(val.item()) if hasattr(val, 'item') else float(val)
+                    item[col_lower] = val_float
+                    if col_lower == 'close':
+                        item['price'] = val_float
             history.append(item)
+        
+        if not history:
+            print(f"DEBUG: History is empty for {symbol}. df_enriched size: {len(df_enriched)}")
 
-        current_price = history[-1]["close"]
+        current_price = history[-1]["close"] if history else predicted_price
         change = float(((predicted_price - current_price) / current_price) * 100)
 
         if change > dynamic_threshold:
@@ -158,6 +174,8 @@ def predict_detailed(symbol):
         else:
             signal = "HOLD"
 
+        latest = history[-1] if history else {}
+        
         return {
             "model": "Multivariate LSTM",
             "symbol": symbol,
@@ -167,7 +185,11 @@ def predict_detailed(symbol):
             "threshold_used": float(dynamic_threshold),
             "volatility": float(volatility),
             "signal": signal,
-            "latest_features": history[-1] if history else {},
+            "rsi": latest.get("rsi"),
+            "macd": latest.get("macd"),
+            "sma20": latest.get("sma20"),
+            "sma50": latest.get("sma50"),
+            "features": latest,
             "history": history
         }
 

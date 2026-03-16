@@ -13,7 +13,7 @@ async def fetch_news(session, company):
 
     url = RSS_URL.format(query=company)
 
-    async with session.get(url, timeout=15) as response:
+    async with session.get(url, timeout=150) as response:
 
         text = await response.text()
 

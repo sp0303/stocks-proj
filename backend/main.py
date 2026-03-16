@@ -13,6 +13,7 @@ from technical_service import get_technical, get_technical_batch
 from social_sentiment import get_social_sentiment
 from ai_models.fast_predictor import predict as lstm_predict, predict_detailed as lstm_predict_detailed
 from ai_models.transformer_predict import predict as transformer_predict, predict_detailed as transformer_predict_detailed
+from ai_models.xgboost_predict import predict as xgboost_predict
 from intelligence_service import get_stock_intelligence, get_index_intelligence
 
 from fastapi.responses import FileResponse, JSONResponse
@@ -122,42 +123,44 @@ def transformer_prediction_fast(symbol: str):
 def transformer_prediction(symbol: str):
     return transformer_predict_detailed(symbol)
 
+@app.get("/ai/xgboost/{symbol}")
+def xgb_prediction(symbol: str):
+    return xgboost_predict(symbol)
+
 @app.get("/ai/consensus/{symbol}")
 def get_ai_consensus(symbol: str):
     lstm = lstm_predict(symbol)
     trans = transformer_predict(symbol)
+    xgb = xgboost_predict(symbol)
     
     # Error handling
-    if "error" in lstm and "error" in trans:
-        return {"verdict": "UNAVAILABLE", "reason": "Both models failed"}
+    results = {"lstm": lstm, "transformer": trans, "xgboost": xgb}
+    valid_signals = []
     
-    # If one fails, use the other
-    if "error" in lstm: return {"verdict": trans["signal"], "consensus": False, "note": "LSTM failed"}
-    if "error" in trans: return {"verdict": lstm["signal"], "consensus": False, "note": "Transformer failed"}
+    for name, res in results.items():
+        if "error" not in res:
+            valid_signals.append(res["signal"])
+    
+    if not valid_signals:
+        return {"verdict": "UNAVAILABLE", "reason": "All models failed"}
 
-    # Consensus Logic
-    l_sig = lstm["signal"]
-    t_sig = trans["signal"]
+    # Consensus Logic (Majority Vote or Unanimous)
+    from collections import Counter
+    counts = Counter(valid_signals)
+    most_common, frequency = counts.most_common(1)[0]
     
-    if l_sig == t_sig:
-        verdict = l_sig # Agreement
-        consensus = True
-    elif (l_sig == "BUY" and t_sig == "SELL") or (l_sig == "SELL" and t_sig == "BUY"):
-        verdict = "DIVERGENT" # Conflict
-        consensus = False
-    else:
-        # One says HOLD, the other has a direction. 
-        # We'll take the direction but mark it as weak consensus.
-        verdict = l_sig if l_sig != "HOLD" else t_sig
-        consensus = False
+    consensus = frequency == len(valid_signals)
+    verdict = most_common
 
     return {
         "symbol": symbol,
         "verdict": verdict,
         "consensus": consensus,
-        "lstm": {"signal": l_sig, "move": lstm["expected_move"]},
-        "transformer": {"signal": t_sig, "move": trans["expected_move"]},
-        "timestamp": os.path.getmtime(os.path.join(os.path.dirname(__file__), "ai_models/training_db")) # Placeholder for freshness
+        "agreement_level": f"{frequency}/{len(valid_signals)}",
+        "lstm": {"signal": lstm.get("signal", "ERROR"), "move": lstm.get("expected_move", 0)},
+        "transformer": {"signal": trans.get("signal", "ERROR"), "move": trans.get("expected_move", 0)},
+        "xgboost": {"signal": xgb.get("signal", "ERROR"), "move": xgb.get("expected_move", 0)},
+        "timestamp": os.path.getmtime(os.path.join(os.path.dirname(__file__), "ai_models/training_db"))
     }
 
 @app.get("/ai/intelligence/stock/{symbol}")

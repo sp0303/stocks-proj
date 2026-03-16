@@ -160,6 +160,22 @@
             </div>
         </div>
 
+        <h3 style="color: #f59e0b; margin-bottom: 15px; font-size: 1rem; margin-top: 30px;">Scikit-Learn XGBoost Prediction</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="label">XGBoost Predicted</span>
+                <span id="stat-predicted-xgb" class="value">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">Expected Move</span>
+                <span id="stat-move-xgb" class="value">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="label">XGBoost Signal</span>
+                <span id="stat-signal-xgb" class="value">--</span>
+            </div>
+        </div>
+
         <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1rem; margin-top: 30px;">Technical Indicators Snapshot</h3>
         <div class="insight-grid">
             <div class="insight-group">
@@ -205,12 +221,12 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Close</th>
-                            <th>High/Low</th>
-                            <th>Volume</th>
-                            <th>RSI</th>
-                            <th>MACD</th>
-                            <th>SMA 20/50</th>
+                            <th>H/L/C</th>
+                            <th>Volume / %Chg</th>
+                            <th>Momentum (RSI/ROC)</th>
+                            <th>Trend (SMA/EMA)</th>
+                            <th>Volatility (BB/ATR)</th>
+                            <th>Flow (OBV/VWAP)</th>
                         </tr>
                     </thead>
                     <tbody id="history-body">

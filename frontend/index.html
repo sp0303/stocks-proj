@@ -318,10 +318,40 @@
                     </div>
                 </div>
 
+                <!-- AI Prediction Section XGBoost-->
+                <div class="insight-section">
+                    <h3 style="color: #f59e0b; margin-bottom: 15px; font-size: 1rem;">AI Prediction (XGBoost)</h3>
+
+                    <div class="insight-grid">
+                        <div class="insight-group">
+                            <span class="label">Current Price</span>
+                            <span id="aiCurrentXGB">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Predicted Price</span>
+                            <span id="aiPredictedXGB">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">Expected Move</span>
+                            <span id="aiMoveXGB">-</span>
+                        </div>
+
+                        <div class="insight-group">
+                            <span class="label">AI Signal</span>
+                            <span id="aiSignalXGB">-</span>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Technical Indicators Section -->
                 <div class="insight-section">
-                    <h3 style="color: var(--accent-blue); margin-bottom: 15px; font-size: 1rem;">Technical Indicators</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--accent-blue); font-size: 1rem; margin: 0;">Technical Indicators</h3>
+                        <button onclick="toggleDeepDive()" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">Deep Dive ↓</button>
+                    </div>
                     <div class="insight-grid">
                         <div class="insight-group">
                             <span class="label">RSI (14)</span>
@@ -338,6 +368,13 @@
                         <div class="insight-group">
                             <span class="label">SMA 50</span>
                             <span id="aiSMA50">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Intelligence Deep Dive (The remaining 16 features) -->
+                    <div id="ai-deep-dive" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+                        <div class="insight-grid" id="deep-dive-grid" style="grid-template-columns: repeat(3, 1fr); font-size: 0.8rem;">
+                            <!-- Populated by JS -->
                         </div>
                     </div>
                 </div>

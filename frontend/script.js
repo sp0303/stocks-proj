@@ -581,6 +581,13 @@ function showScraperAlert() {
     setTimeout(() => alert.style.display = "none", 3000);
 }
 
+function toggleDeepDive() {
+    const dd = document.getElementById("ai-deep-dive");
+    if (dd) {
+        dd.style.display = dd.style.display === "none" ? "block" : "none";
+    }
+}
+
 function updatePaginationUI() {
     const totalPages = Math.ceil(moversData.length / itemsPerPage) || 1;
     document.getElementById("page-info").innerText = `Page ${currentPage} of ${totalPages}`;
@@ -603,14 +610,16 @@ function nextPage() {
 
 async function loadAI(symbol, volSpike = 1.0) {
     try {
-        const [resLstm, resTrans, resCons] = await Promise.all([
+        const [resLstm, resTrans, resXgb, resCons] = await Promise.all([
             fetch(API + "/ai/lstm/" + symbol),
             fetch(API + "/ai/transformer/" + symbol).catch(() => null),
+            fetch(API + "/ai/xgboost/" + symbol).catch(() => null),
             fetch(API + "/ai/consensus/" + symbol).catch(() => null)
         ]);
         
         const data = await resLstm.json();
         const dataTrans = resTrans && resTrans.ok ? await resTrans.json() : null;
+        const dataXgb = resXgb && resXgb.ok ? await resXgb.json() : null;
         const dataCons = resCons && resCons.ok ? await resCons.json() : null;
 
         // Consensus UI
@@ -623,17 +632,17 @@ async function loadAI(symbol, volSpike = 1.0) {
             if (dataCons.consensus) {
                 vEl.style.background = (dataCons.verdict === "BUY") ? "rgba(34, 197, 94, 0.2)" : (dataCons.verdict === "SELL" ? "rgba(239, 68, 68, 0.2)" : "rgba(148, 163, 184, 0.2)");
                 vEl.style.color = (dataCons.verdict === "BUY") ? "#22c55e" : (dataCons.verdict === "SELL" ? "#ef4444" : "#94a3b8");
-                nEl.innerHTML = `✅ <b>High Confidence:</b> Both models agree on a <b>${dataCons.verdict}</b> signal.`;
+                nEl.innerHTML = `✅ <b>High Confidence:</b> All models agree on a <b>${dataCons.verdict}</b> signal (${dataCons.agreement_level} alignment).`;
                 section.style.borderLeftColor = "#22c55e";
             } else if (dataCons.verdict === "DIVERGENT") {
                 vEl.style.background = "rgba(245, 158, 11, 0.2)";
                 vEl.style.color = "#f59e0b";
-                nEl.innerHTML = `⚠️ <b>Warning:</b> Models disagree (LSTM: ${dataCons.lstm.signal}, Trans: ${dataCons.transformer.signal}). Proceed with caution.`;
+                nEl.innerHTML = `⚠️ <b>Warning:</b> Model disagreement detected. Signal: ${dataCons.verdict}. Agreement: ${dataCons.agreement_level}.`;
                 section.style.borderLeftColor = "#f59e0b";
             } else {
                 vEl.style.background = "rgba(96, 165, 250, 0.2)";
                 vEl.style.color = "#60a5fa";
-                nEl.innerHTML = `ℹ️ <b>Weak Consensus:</b> One model is neutral, taking lead from ${dataCons.verdict} signal.`;
+                nEl.innerHTML = `ℹ️ <b>Consensus:</b> Taking ${dataCons.verdict} as majority signal (${dataCons.agreement_level}).`;
                 section.style.borderLeftColor = "#60a5fa";
             }
         }
@@ -663,11 +672,49 @@ async function loadAI(symbol, volSpike = 1.0) {
             document.getElementById("aiSignalTransformer").innerText = "-";
         }
 
+        // XGBoost Grid
+        if (dataXgb && !dataXgb.error) {
+            document.getElementById("aiCurrentXGB").innerText = dataXgb.current_price.toFixed(2);
+            document.getElementById("aiPredictedXGB").innerText = dataXgb.predicted_price.toFixed(2);
+            document.getElementById("aiMoveXGB").innerText = dataXgb.expected_move.toFixed(2) + "%";
+
+            const xgbSignalEl = document.getElementById("aiSignalXGB");
+            xgbSignalEl.innerText = dataXgb.signal;
+            xgbSignalEl.style.color = (dataXgb.signal === "BUY") ? "#22c55e" : (dataXgb.signal === "SELL" ? "#ef4444" : "#94a3b8");
+        } else {
+            document.getElementById("aiCurrentXGB").innerText = "-";
+            document.getElementById("aiPredictedXGB").innerText = "Not Trained";
+            document.getElementById("aiMoveXGB").innerText = "-";
+            document.getElementById("aiSignalXGB").innerText = "-";
+        }
+
         // TECHNICAL INDICATORS GRID
         document.getElementById("aiRSI").innerText = data.rsi ? data.rsi.toFixed(2) : "N/A";
         document.getElementById("aiMACD").innerText = data.macd ? data.macd.toFixed(2) : "N/A";
         document.getElementById("aiSMA20").innerText = data.sma20 ? data.sma20.toFixed(2) : "N/A";
         document.getElementById("aiSMA50").innerText = data.sma50 ? data.sma50.toFixed(2) : "N/A";
+
+        // POPULATE DEEP DIVE GRID (all 20 features)
+        const deepDive = document.getElementById("deep-dive-grid");
+        if (deepDive && data.features) {
+            const f = data.features;
+            const exclude = ['rsi', 'macd', 'sma20', 'sma50', 'date', 'price'];
+            let html = "";
+            Object.entries(f).forEach(([key, val]) => {
+                if (!exclude.includes(key)) {
+                    const label = key.toUpperCase().replace("_", " ");
+                    const displayVal = typeof val === 'number' ? 
+                        (Math.abs(val) > 1000000 ? (val/1000000).toFixed(1) + 'M' : val.toFixed(2)) 
+                        : val;
+                    html += `
+                        <div class="insight-group">
+                            <span class="label" style="font-size: 0.65rem;">${label}</span>
+                            <span>${displayVal}</span>
+                        </div>`;
+                }
+            });
+            deepDive.innerHTML = html;
+        }
 
         // Set detailed analysis link
         const detailedLink = document.getElementById("view-detailed-ai");

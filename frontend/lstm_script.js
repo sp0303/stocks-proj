@@ -36,25 +36,29 @@ initTheme();
 const API = "";
 let globalData = null;
 let globalDataTrans = null;
+let globalDataXgb = null;
 let currentChartType = 'price';
 let chartInstance = null;
 
 async function loadDetailedData(symbol = "^NSEI") {
     const loader = document.getElementById("loader");
     try {
-        const [resLstm, resTrans] = await Promise.all([
+        const [resLstm, resTrans, resXgb] = await Promise.all([
             fetch(`${API}/ai/lstm-detailed/${symbol}`),
-            fetch(`${API}/ai/transformer-detailed/${symbol}`).catch(() => null)
+            fetch(`${API}/ai/transformer-detailed/${symbol}`).catch(() => null),
+            fetch(`${API}/ai/xgboost/${symbol}`).catch(() => null)
         ]);
         
         const data = await resLstm.json();
         const dataTrans = resTrans && resTrans.ok ? await resTrans.json() : null;
+        const dataXgb = resXgb && resXgb.ok ? await resXgb.json() : null;
 
         if (data.error) throw new Error(data.error);
 
         globalData = data;
         globalDataTrans = dataTrans;
-        updateStats(data, dataTrans);
+        globalDataXgb = dataXgb;
+        updateStats(data, dataTrans, dataXgb);
         renderActiveChart();
         renderTable(data.history);
         
@@ -66,7 +70,7 @@ async function loadDetailedData(symbol = "^NSEI") {
     }
 }
 
-function updateStats(data, dataTrans) {
+function updateStats(data, dataTrans, dataXgb) {
     document.getElementById("stat-current").innerText = data.current_price.toFixed(2);
     
     // LSTM Stats
@@ -99,6 +103,25 @@ function updateStats(data, dataTrans) {
         document.getElementById("stat-predicted-trans").innerText = "Not Trained";
         document.getElementById("stat-move-trans").innerText = "--";
         document.getElementById("stat-signal-trans").innerText = "--";
+    }
+
+    // XGBoost Stats
+    if (dataXgb && !dataXgb.error) {
+        document.getElementById("stat-predicted-xgb").innerText = dataXgb.predicted_price.toFixed(2);
+        const xgbMove = dataXgb.expected_move.toFixed(2);
+        const xgbMoveEl = document.getElementById("stat-move-xgb");
+        xgbMoveEl.innerText = (xgbMove > 0 ? "+" : "") + xgbMove + "%";
+        xgbMoveEl.style.color = xgbMove > 0 ? "#f59e0b" : "#ef4444"; 
+
+        const xgbSignalEl = document.getElementById("stat-signal-xgb");
+        xgbSignalEl.innerText = dataXgb.signal;
+        if (dataXgb.signal === "BUY") xgbSignalEl.style.color = "#f59e0b";
+        else if (dataXgb.signal === "SELL") xgbSignalEl.style.color = "#ef4444";
+        else xgbSignalEl.style.color = "#94a3b8";
+    } else {
+        document.getElementById("stat-predicted-xgb").innerText = "Not Trained";
+        document.getElementById("stat-move-xgb").innerText = "--";
+        document.getElementById("stat-signal-xgb").innerText = "--";
     }
 
 
@@ -213,6 +236,24 @@ function renderActiveChart() {
                 tension: 0
             });
         }
+
+        if (globalDataXgb && !globalDataXgb.error) {
+            let xgbData = new Array(historyPrices.length + 1).fill(null);
+            xgbData[historyPrices.length - 1] = historyPrices[historyPrices.length - 1]; // Anchor
+            xgbData[historyPrices.length] = globalDataXgb.predicted_price;
+            
+            datasets.push({
+                label: 'XGBoost Prediction',
+                data: xgbData,
+                borderColor: '#f59e0b',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: (ctx) => ctx.dataIndex === xgbData.length - 1 ? 8 : 0,
+                pointBackgroundColor: '#f59e0b',
+                fill: false,
+                tension: 0
+            });
+        }
         
         createChart(ctx, labelsWithPred, datasets, gridColor, textColor);
     } else if (currentChartType === 'volume') {
@@ -315,16 +356,36 @@ function renderTable(history) {
     
     reversed.forEach((day) => {
         const volStr = day.volume >= 10000000 ? (day.volume/10000000).toFixed(2) + " Cr" : (day.volume/100000).toFixed(2) + " L";
-        
+        const volChg = day.volume_change ? (day.volume_change > 0 ? "+" : "") + day.volume_change.toFixed(1) + "%" : "--";
+        const pColor = day.close >= day.open ? "#22c55e" : "#ef4444";
+
         html += `
             <tr>
                 <td>${day.date}</td>
-                <td style="font-weight: bold;">${day.price.toFixed(2)}</td>
-                <td style="font-size: 0.8rem; color: #94a3b8;">H: ${day.high.toFixed(2)}<br>L: ${day.low.toFixed(2)}</td>
-                <td>${volStr}</td>
-                <td>${day.rsi ? day.rsi.toFixed(2) : '--'}</td>
-                <td>${day.macd ? day.macd.toFixed(2) : '--'}</td>
-                <td style="font-size: 0.8rem;">20: ${day.sma20 ? day.sma20.toFixed(1) : '--'}<br>50: ${day.sma50 ? day.sma50.toFixed(1) : '--'}</td>
+                <td style="font-weight: bold; color: ${pColor};">
+                    ${day.close.toFixed(2)}<br>
+                    <span style="font-size: 0.7rem; color: #94a3b8;">H: ${day.high.toFixed(1)} L: ${day.low.toFixed(1)}</span>
+                </td>
+                <td>
+                    ${volStr}<br>
+                    <span style="font-size: 0.7rem; color: ${day.volume_change > 0 ? '#22c55e' : '#ef4444'};">${volChg}</span>
+                </td>
+                <td>
+                    RSI: ${day.rsi ? day.rsi.toFixed(1) : '--'}<br>
+                    ROC: ${day.roc ? day.roc.toFixed(1) : '--'}%
+                </td>
+                <td>
+                    SMA: ${day.sma20 ? day.sma20.toFixed(0) : '--'}/${day.sma50 ? day.sma50.toFixed(0) : '--'}<br>
+                    EMA: ${day.ema20 ? day.ema20.toFixed(0) : '--'}/${day.ema200 ? day.ema200.toFixed(0) : '--'}
+                </td>
+                <td>
+                    BB: ${day.bb_upper ? day.bb_upper.toFixed(0) : '--'}-${day.bb_lower ? day.bb_lower.toFixed(0) : '--'}<br>
+                    ATR: ${day.atr ? day.atr.toFixed(1) : '--'}
+                </td>
+                <td>
+                    OBV: ${day.obv ? (day.obv/1000000).toFixed(1) + 'M' : '--'}<br>
+                    VWAP: ${day.vwap ? day.vwap.toFixed(1) : '--'}
+                </td>
             </tr>
         `;
     });
