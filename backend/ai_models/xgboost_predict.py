@@ -68,20 +68,41 @@ def predict(symbol):
         current_price = float(df_enriched['Close'].iloc[-1])
         change = ((predicted_price - current_price) / current_price) * 100
 
+        # Calculate Volatility for Signal Threshold (matching LSTM/Transformer logic)
+        recent_prices = df['Close'].tail(60).values.flatten()
+        daily_returns = np.diff(recent_prices) / recent_prices[:-1]
+        volatility = np.std(daily_returns) * 100
+        dynamic_threshold = max(1.5, volatility * 2.0)
+
         # Simple threshold logic for signal
-        if change > 1.5:
+        if change > dynamic_threshold:
             signal = "BUY"
-        elif change < -1.5:
+        elif change < -dynamic_threshold:
             signal = "SELL"
         else:
             signal = "HOLD"
+
+        # Construct features dictionary for frontend deep dive
+        last_row = df_enriched.iloc[-1]
+        features_dict = {}
+        for feat in FEATURES:
+            val = last_row[feat]
+            # Handle numpy types
+            features_dict[feat.lower()] = float(val.item()) if hasattr(val, 'item') else float(val)
 
         return {
             "model": "XGBoost",
             "current_price": current_price,
             "predicted_price": predicted_price,
             "expected_move": change,
-            "signal": signal
+            "volatility": volatility,
+            "threshold_used": dynamic_threshold,
+            "signal": signal,
+            "rsi": features_dict.get("rsi"),
+            "macd": features_dict.get("macd"),
+            "sma20": features_dict.get("sma20"),
+            "sma50": features_dict.get("sma50"),
+            "features": features_dict
         }
 
     except Exception as e:

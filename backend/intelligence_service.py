@@ -14,25 +14,33 @@ from fundamental_service import get_fundamentals
 from technical_service import get_technical
 from ai_models.fast_predictor import predict as lstm_predict
 from ai_models.transformer_predict import predict as transformer_predict
+from ai_models.xgboost_predict import predict as xgboost_predict
 import aiohttp
+from collections import Counter
 
-def calculate_consensus(lstm, trans):
-    """Reused consensus logic for aggregation."""
-    if "error" in lstm and "error" in trans:
-        return {"verdict": "UNAVAILABLE", "consensus": False}
+def calculate_consensus(lstm, trans, xgb):
+    """Majority vote consensus for 3 AI models."""
+    results = {"lstm": lstm, "transformer": trans, "xgboost": xgb}
+    valid_signals = []
     
-    if "error" in lstm: return {"verdict": trans.get("signal", "UNKNOWN"), "consensus": False}
-    if "error" in trans: return {"verdict": lstm.get("signal", "UNKNOWN"), "consensus": False}
+    for res in results.values():
+        if res and "error" not in res:
+            valid_signals.append(res.get("signal", "HOLD"))
+    
+    if not valid_signals:
+        return {"verdict": "UNAVAILABLE", "consensus": False, "agreement": "0/0"}
 
-    l_sig = lstm.get("signal", "HOLD")
-    t_sig = trans.get("signal", "HOLD")
+    counts = Counter(valid_signals)
+    most_common, frequency = counts.most_common(1)[0]
     
-    if l_sig == t_sig:
-        return {"verdict": l_sig, "consensus": True}
-    elif (l_sig == "BUY" and t_sig == "SELL") or (l_sig == "SELL" and t_sig == "BUY"):
-        return {"verdict": "DIVERGENT", "consensus": False}
-    else:
-        return {"verdict": l_sig if l_sig != "HOLD" else t_sig, "consensus": False}
+    total = len(valid_signals)
+    consensus = (frequency == total)
+    
+    return {
+        "verdict": most_common, 
+        "consensus": consensus,
+        "agreement": f"{frequency}/{total}"
+    }
 
 async def get_stock_intelligence(symbol, session=None, retries=2):
     """
@@ -54,18 +62,18 @@ async def get_stock_intelligence(symbol, session=None, retries=2):
                 technical_task = loop.run_in_executor(pool, get_technical, symbol)
                 lstm_task = loop.run_in_executor(pool, lstm_predict, symbol)
                 trans_task = loop.run_in_executor(pool, transformer_predict, symbol)
+                xgb_task = loop.run_in_executor(pool, xgboost_predict, symbol)
                 
-                results = await asyncio.gather(news_task, fundamental_task, technical_task, lstm_task, trans_task)
+                results = await asyncio.gather(news_task, fundamental_task, technical_task, lstm_task, trans_task, xgb_task)
                 
-            news, fundamentals, technicals, lstm, trans = results
+            news, fundamentals, technicals, lstm, trans, xgb = results
             
             # If we got critical data failures, maybe retry? 
-            # (Crumb errors often manifest as empty results or specific exceptions)
             if not technicals or (technicals.get("price") is None and attempt < retries):
                 time.sleep(random.uniform(1, 3))
                 continue
 
-            consensus = calculate_consensus(lstm, trans)
+            consensus = calculate_consensus(lstm, trans, xgb)
             
             return {
                 "symbol": symbol,
@@ -79,6 +87,7 @@ async def get_stock_intelligence(symbol, session=None, retries=2):
                 "ai": {
                     "lstm": {"signal": lstm.get("signal"), "move": lstm.get("expected_move"), "features": lstm.get("features", {})},
                     "transformer": {"signal": trans.get("signal"), "move": trans.get("expected_move"), "features": trans.get("features", {})},
+                    "xgboost": {"signal": xgb.get("signal"), "move": xgb.get("expected_move"), "features": xgb.get("features", {})},
                     "consensus": consensus
                 }
             }
